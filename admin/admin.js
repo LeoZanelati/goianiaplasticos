@@ -22,7 +22,7 @@
   var SUBS = {}; C.itens.forEach(function (i) { SUBS[i.c] = i.s || ""; });
   var cat = "", sub = "";
   var rows = {};            // codigo -> linha do banco
-  var filt = "todos", q = "", shown = 40, pendingCode = null;
+  var vis = { disponivel: true, sob_consulta: true, oculto: true }, onlyNew = false, q = "", shown = 40, pendingCode = null;
   var STATUS = [["disponivel", "Disponível"], ["sob_consulta", "Sob consulta"], ["oculto", "Oculto"]];
 
   function show(id, on) { $(id).hidden = !on; }
@@ -89,9 +89,8 @@
     var list = everything.filter(function (i) {
       if (cat && i.g !== cat) return false;
       if (sub && G && subKey(i, G) !== sub) return false;
-      if (filt === "sob" && i.st !== "sob_consulta") return false;
-      if (filt === "oculto" && i.st !== "oculto") return false;
-      if (filt === "novo" && !i.novo) return false;
+      if (!vis[i.st]) return false;
+      if (onlyNew && !i.novo) return false;
       if (!terms.length) return true;
       if (num) return String(i.c).indexOf(terms[0]) === 0;
       var k = nz(i.n + " " + i.c + " " + (FAMN[i.f] || ""));
@@ -109,8 +108,10 @@
       $("#subs").hidden = false;
     } else { $("#subs").hidden = true; }
     var all_ = everything, c = function (f) { return all_.filter(f).length; };
-    $("#flt").innerHTML = [["todos", "Todos"], ["sob", "Sob consulta " + c(function (i) { return i.st === "sob_consulta"; })], ["oculto", "Ocultos " + c(function (i) { return i.st === "oculto"; })], ["novo", "Novos " + c(function (i) { return i.novo; })]]
-      .map(function (x) { return '<button class="chip" type="button" data-f="' + x[0] + '" aria-pressed="' + (filt === x[0]) + '">' + x[1] + "</button>"; }).join("");
+    var cs = function (st) { return everything.filter(function (i) { return i.st === st; }).length; };
+    $("#flt").innerHTML = [["disponivel", "Disponíveis", cs("disponivel")], ["sob_consulta", "Sob consulta", cs("sob_consulta")], ["oculto", "Ocultos", cs("oculto")]]
+      .map(function (x) { return '<button class="chip" type="button" data-vis="' + x[0] + '" aria-pressed="' + vis[x[0]] + '">' + (vis[x[0]] ? "✓ " : "") + x[1] + " " + x[2] + "</button>"; }).join("") +
+      '<button class="chip" type="button" data-new="1" aria-pressed="' + onlyNew + '">Só itens novos ' + everything.filter(function (i) { return i.novo; }).length + "</button>";
     $("#cnt").textContent = list.length + (list.length === 1 ? " item" : " itens");
     $("#list").innerHTML = list.slice(0, shown).map(function (i) {
       return '<div class="it" data-c="' + i.c + '"><div class="th">' + (i.foto ? '<img src="' + esc(i.foto) + '" alt="" loading="lazy">' : "sem foto") + "</div><div>" +
@@ -127,8 +128,8 @@
     var t = ev.target;
     var tc = t.closest("[data-cat]"); if (tc) { cat = tc.getAttribute("data-cat"); sub = ""; shown = 40; render(); return; }
     var ts = t.closest("[data-sub]"); if (ts) { sub = ts.getAttribute("data-sub"); shown = 40; render(); return; }
-    var f = t.closest("[data-f]");
-    if (f) { filt = f.getAttribute("data-f"); shown = 40; render(); return; }
+    var tv = t.closest("[data-vis]"); if (tv) { var k = tv.getAttribute("data-vis"); vis[k] = !vis[k]; shown = 40; render(); return; }
+    if (t.closest("[data-new]")) { onlyNew = !onlyNew; shown = 40; render(); return; }
     var it = t.closest(".it"); if (!it) return;
     var code = +it.getAttribute("data-c");
     var st = t.closest("[data-st]");
@@ -198,7 +199,7 @@
     (f ? upload(code, f) : Promise.resolve(null)).then(function (url) {
       var row = { codigo: code, nome: nome, familia: $("#nf").value, unidade: $("#nu").value, status: $("#ns").value, foto: url, novo: true };
       return sb.from("itens").insert(row).then(function (r) {
-        if (r.error) throw r.error; rows[code] = row; filt = "novo"; render();
+        if (r.error) throw r.error; rows[code] = row; onlyNew = true; cat = ""; sub = ""; render();
         $("#fn").reset(); $("#npv").hidden = true; show("#fn", false); $("#novo").hidden = false; gsay("Item cadastrado. Já aparece no site.");
       });
     }).catch(function (e) { gsay(trad(e), true); }).then(function () { btn.disabled = false; });
