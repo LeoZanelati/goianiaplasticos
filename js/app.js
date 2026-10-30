@@ -25,14 +25,19 @@
     { id: "aviamentos", nome: "Aviamentos e ferragens", fams: ["linhas", "grampos", "colas", "acabamentos", "ferragens", "ferramentas", "outros"], txt: "Linhas, grampos, colas, zíperes, pés, ferragens e ferramentas.", by: "f", icon: ICON_TOOLS }
   ];
   var G = {}; GROUPS.forEach(function (g) { G[g.id] = g; });
-  var BYC = {}, ITEMS = C.itens;
+  var BYC = {}, ITEMS = [];
   var famGroup = {}; GROUPS.forEach(function (g) { g.fams.forEach(function (f) { famGroup[f] = g.id; }); });
-  ITEMS.forEach(function (it) {
-    it.g = famGroup[it.f];
-    it.k = nz(it.n + " " + it.c + " " + FAM[it.f].nome + " " + G[it.g].nome);
-    BYC[it.c] = it;
-  });
-  GROUPS.forEach(function (g) { g.items = ITEMS.filter(function (i) { return i.g === g.id; }); });
+  function build(list) {
+    ITEMS = list; BYC = {};
+    ITEMS.forEach(function (it) {
+      it.g = famGroup[it.f];
+      it.k = nz(it.n + " " + it.c + " " + FAM[it.f].nome + " " + G[it.g].nome + (it.sc ? " sob consulta" : ""));
+      BYC[it.c] = it;
+    });
+    GROUPS.forEach(function (g) { g.items = ITEMS.filter(function (i) { return i.g === g.id; }); });
+    if (typeof lista !== "undefined" && lista) lista = lista.filter(function (c) { return BYC[c]; });
+  }
+  build(C.itens.map(function (i) { return Object.assign({}, i); }));
 
   /* ---------- minha lista ---------- */
   var lista = [];
@@ -74,10 +79,11 @@
   var WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.95L2 22l5.2-1.5A9.93 9.93 0 1 0 12.04 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.08.9.92-3-.2-.31a8.2 8.2 0 1 1 6.86 3.74Zm4.5-6.14c-.25-.12-1.46-.72-1.69-.8-.23-.09-.39-.12-.56.12-.16.25-.64.8-.78.97-.14.16-.29.18-.54.06a6.7 6.7 0 0 1-3.3-2.88c-.25-.43.25-.4.72-1.33.08-.16.04-.3-.02-.42-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48a.93.93 0 0 0-.67.31c-.23.25-.88.86-.88 2.1s.9 2.43 1.03 2.6c.12.16 1.77 2.7 4.3 3.79 1.6.69 2.23.75 3.03.63.49-.07 1.46-.6 1.67-1.18.2-.58.2-1.07.14-1.18-.06-.1-.23-.16-.48-.28Z"/></svg>';
 
   /* ---------- cartões ---------- */
-  function img(it, i) { return "img/" + it.p[i || 0]; }
+  function img(it, i) { var p = it.p[i || 0]; return /^https?:/.test(p) ? p : "img/" + p; }
+  var TAG = function (it) { return it.sc ? '<span class="tag">Sob consulta</span>' : ""; };
   function card(it) {
     return '<div class="card"><button class="card-open" type="button" data-open="' + it.c + '" style="all:unset;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-width:0" aria-label="Ver ' + esc(it.n) + '">' +
-      '<span class="ph"><img src="' + img(it) + '" alt="Amostra: ' + esc(it.n) + '" loading="lazy" decoding="async"></span>' +
+      '<span class="ph"><img src="' + img(it) + '" alt="Amostra: ' + esc(it.n) + '" loading="lazy" decoding="async">' + TAG(it) + '</span>' +
       '<span class="nm">' + esc(it.n) + '</span><span class="cd">cód. ' + it.c + '</span></button>' +
       '<button class="add" type="button" data-c="' + it.c + '"></button></div>';
   }
@@ -256,7 +262,7 @@
     var big = n
       ? '<div class="big"><img id="bigimg" src="' + img(it, 0) + '" alt="Amostra: ' + esc(it.n) + '">' + (n > 1 ? '<button class="nav p" type="button" id="np" aria-label="Foto anterior">‹</button><button class="nav n" type="button" id="nn" aria-label="Próxima foto">›</button>' : "") + "</div>"
       : '<div class="big"><div class="ph-empty">' + (G[it.g].icon || ICON_FOAM) + "</div></div>";
-    var o = overlay(big + '<span class="kind">' + esc(FAM[it.f].nome) + '</span><h2 id="shT">' + esc(it.n) + '</h2><div class="meta"><span>Código <b>' + it.c + "</b></span><span>Vendido por <b>" + esc(it.u) + "</b></span></div>" +
+    var o = overlay(big + '<span class="kind">' + esc(FAM[it.f].nome) + '</span>' + (it.sc ? ' <span class="tag tag-in">Sob consulta</span>' : '') + '<h2 id="shT">' + esc(it.n) + '</h2><div class="meta"><span>Código <b>' + it.c + "</b></span><span>Vendido por <b>" + esc(it.u) + "</b></span></div>" +
       '<div class="acts"><a class="btn btn-wa" href="' + waLink(oneMsg(it)) + '" target="_blank" rel="noopener">' + WA_ICON + 'Pedir preço no WhatsApp</a>' +
       '<button class="btn btn-line add-big" type="button" id="addBig"></button></div>' +
       '<p class="note">Cores podem variar um pouco na tela. ' + (n ? "" : "Este item ainda não tem foto no site. ") + 'Prefere comprar online? <a href="' + esc(S.mercadoLivre) + '" target="_blank" rel="noopener">Veja nossa loja no Mercado Livre</a>.</p>', "sheetItem");
@@ -294,4 +300,30 @@
   $("#year").textContent = new Date().getFullYear();
   $("#footMl").href = S.mercadoLivre;
   route();
+
+  /* ---------- ajustes feitos no painel (Supabase); se falhar, vale o catálogo acima ---------- */
+  function applyOverrides(rows) {
+    var base = C.itens.map(function (i) { return Object.assign({}, i); }), by = {};
+    base.forEach(function (i) { by[i.c] = i; });
+    rows.forEach(function (r) {
+      var it = by[r.codigo];
+      if (r.novo && !it && FAM[r.familia]) {
+        it = { c: r.codigo, n: r.nome, f: r.familia, u: r.unidade || "metro" }; base.push(it); by[it.c] = it;
+      }
+      if (!it) return;
+      if (r.foto) it.p = [r.foto];
+      if (r.status === "oculto") it.hide = true;
+      if (r.status === "sob_consulta") it.sc = true;
+    });
+    build(base.filter(function (i) { return !i.hide; }));
+    route(true); refreshList();
+  }
+  if (S.supabaseUrl && window.fetch) {
+    var ctl = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ctl) ctl.abort(); }, 6000);
+    fetch(S.supabaseUrl + "/rest/v1/itens?select=codigo,nome,familia,unidade,status,foto,novo", {
+      headers: { apikey: S.supabaseKey, Authorization: "Bearer " + S.supabaseKey }, signal: ctl ? ctl.signal : undefined
+    }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (rows) { clearTimeout(tm); if (rows && rows.length) applyOverrides(rows); })
+      .catch(function () { /* mantém o catálogo estático */ });
+  }
 })();
