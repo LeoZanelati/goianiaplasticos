@@ -201,3 +201,8 @@ body.has-list .fabwa{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 .search input::-webkit-search-cancel-button,.search input::-webkit-search-decoration{-webkit-appearance:none;appearance:none}
 footer a{color:inherit;text-decoration:underline}
+
+.mapcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.mapcol .map{width:100%;height:300px;border:0;border-radius:16px;background:var(--surface-2)}
+.mapcol .where{min-height:0}
+@media (min-width:760px){.mapcol .map{height:340px}}
