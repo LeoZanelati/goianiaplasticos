@@ -9,6 +9,18 @@
 
   var FAMS = C.familias, FAMN = {}; FAMS.forEach(function (f) { FAMN[f.id] = f.nome; });
   var BASE = {}; C.itens.forEach(function (i) { BASE[i.c] = i; });
+  var GROUPS = [
+    { id: "tecidos", nome: "Tecidos", fams: ["tecidos"], by: "s" },
+    { id: "courvim", nome: "Courvim e corano", fams: ["courvim"], by: "s" },
+    { id: "acoplados", nome: "Acoplados", fams: ["acoplados"] },
+    { id: "tetos", nome: "Tetos e feltros", fams: ["tetos"] },
+    { id: "carpetes", nome: "Carpetes", fams: ["carpetes"] },
+    { id: "espumas", nome: "Espumas", fams: ["espumas"] },
+    { id: "aviamentos", nome: "Aviamentos e ferragens", fams: ["linhas", "grampos", "colas", "acabamentos", "ferragens", "ferramentas", "outros"], by: "f" }
+  ];
+  var famG = {}; GROUPS.forEach(function (g) { g.fams.forEach(function (f) { famG[f] = g.id; }); });
+  var SUBS = {}; C.itens.forEach(function (i) { SUBS[i.c] = i.s || ""; });
+  var cat = "", sub = "";
   var rows = {};            // codigo -> linha do banco
   var filt = "todos", q = "", shown = 40, pendingCode = null;
   var STATUS = [["disponivel", "Disponível"], ["sob_consulta", "Sob consulta"], ["oculto", "Oculto"]];
@@ -63,16 +75,20 @@
   function all() {
     var out = C.itens.map(function (i) {
       var r = rows[i.c] || {};
-      return { c: i.c, n: i.n, f: i.f, u: i.u, st: r.status || "disponivel", foto: r.foto || (i.p ? "../img/" + i.p[0] : ""), novo: false };
+      return { c: i.c, n: i.n, f: i.f, g: famG[i.f], s: i.s || "", u: i.u, st: r.status || "disponivel", foto: r.foto || (i.p ? "../img/" + i.p[0] : ""), novo: false };
     });
     Object.keys(rows).forEach(function (k) {
-      var r = rows[k]; if (r.novo) out.push({ c: r.codigo, n: r.nome, f: r.familia, u: r.unidade, st: r.status, foto: r.foto || "", novo: true });
+      var r = rows[k]; if (r.novo) out.push({ c: r.codigo, n: r.nome, f: r.familia, g: famG[r.familia], s: "", u: r.unidade, st: r.status, foto: r.foto || "", novo: true });
     });
     return out;
   }
+  function subKey(i, g) { return g.by === "f" ? i.f : (i.s || "Outros"); }
   function render() {
     var terms = nz(q).split(" ").filter(Boolean), num = /^\d+$/.test(nz(q));
-    var list = all().filter(function (i) {
+    var everything = all(), G = GROUPS.filter(function (g) { return g.id === cat; })[0];
+    var list = everything.filter(function (i) {
+      if (cat && i.g !== cat) return false;
+      if (sub && G && subKey(i, G) !== sub) return false;
       if (filt === "sob" && i.st !== "sob_consulta") return false;
       if (filt === "oculto" && i.st !== "oculto") return false;
       if (filt === "novo" && !i.novo) return false;
@@ -81,8 +97,19 @@
       var k = nz(i.n + " " + i.c + " " + (FAMN[i.f] || ""));
       return terms.every(function (t) { return k.indexOf(t) > -1; });
     });
-    var all_ = all(), c = function (f) { return all_.filter(f).length; };
-    $("#flt").innerHTML = [["todos", "Todos " + all_.length], ["sob", "Sob consulta " + c(function (i) { return i.st === "sob_consulta"; })], ["oculto", "Ocultos " + c(function (i) { return i.st === "oculto"; })], ["novo", "Novos " + c(function (i) { return i.novo; })]]
+    $("#cats").innerHTML = [{ id: "", nome: "Todas", n: everything.length }].concat(GROUPS.map(function (g) { return { id: g.id, nome: g.nome, n: everything.filter(function (i) { return i.g === g.id; }).length }; }))
+      .map(function (g) { return '<button class="tab" type="button" role="tab" data-cat="' + g.id + '" aria-selected="' + (cat === g.id) + '">' + esc(g.nome) + "<small>" + g.n + "</small></button>"; }).join("");
+    if (G && G.by) {
+      var cnt = {}, ord = [];
+      everything.filter(function (i) { return i.g === G.id; }).forEach(function (i) { var k = subKey(i, G); if (!cnt[k]) { cnt[k] = 0; ord.push(k); } cnt[k]++; });
+      if (G.by === "f") ord.sort(function (x, y) { return G.fams.indexOf(x) - G.fams.indexOf(y); });
+      else ord.sort(function (x, y) { return x === "Outros" ? 1 : y === "Outros" ? -1 : cnt[y] - cnt[x]; });
+      $("#subs").innerHTML = [["", "Todos", cnt && Object.keys(cnt).reduce(function (s, k) { return s + cnt[k]; }, 0)]].concat(ord.map(function (k) { return [k, G.by === "f" ? FAMN[k] : k, cnt[k]]; }))
+        .map(function (x) { return '<button class="tab" type="button" data-sub="' + esc(x[0]) + '" aria-selected="' + (sub === x[0]) + '">' + esc(x[1]) + "<small>" + x[2] + "</small></button>"; }).join("");
+      $("#subs").hidden = false;
+    } else { $("#subs").hidden = true; }
+    var all_ = everything, c = function (f) { return all_.filter(f).length; };
+    $("#flt").innerHTML = [["todos", "Todos"], ["sob", "Sob consulta " + c(function (i) { return i.st === "sob_consulta"; })], ["oculto", "Ocultos " + c(function (i) { return i.st === "oculto"; })], ["novo", "Novos " + c(function (i) { return i.novo; })]]
       .map(function (x) { return '<button class="chip" type="button" data-f="' + x[0] + '" aria-pressed="' + (filt === x[0]) + '">' + x[1] + "</button>"; }).join("");
     $("#cnt").textContent = list.length + (list.length === 1 ? " item" : " itens");
     $("#list").innerHTML = list.slice(0, shown).map(function (i) {
@@ -97,7 +124,10 @@
   $("#q").addEventListener("input", function () { q = this.value; shown = 40; render(); });
   $("#more").addEventListener("click", function () { shown += 60; render(); });
   document.addEventListener("click", function (ev) {
-    var t = ev.target, f = t.closest("[data-f]");
+    var t = ev.target;
+    var tc = t.closest("[data-cat]"); if (tc) { cat = tc.getAttribute("data-cat"); sub = ""; shown = 40; render(); return; }
+    var ts = t.closest("[data-sub]"); if (ts) { sub = ts.getAttribute("data-sub"); shown = 40; render(); return; }
+    var f = t.closest("[data-f]");
     if (f) { filt = f.getAttribute("data-f"); shown = 40; render(); return; }
     var it = t.closest(".it"); if (!it) return;
     var code = +it.getAttribute("data-c");
