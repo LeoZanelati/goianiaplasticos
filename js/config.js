@@ -6,9 +6,13 @@ window.SITE = {
   nome: "Goiânia Plásticos",
   slogan: "Tudo para tapeceiro",
 
-  // WhatsApp: só números, com 55 + DDD + número
-  whatsapp: "5562995513306",
-  whatsappExibir: "(62) 99551-3306",
+  // WhatsApp: só números, com 55 + DDD + número. O cliente escolhe com quem falar.
+  atendentes: [
+    { nome: "Valdeir Júnior", numero: "5562991120630", exibir: "(62) 99112-0630" },
+    { nome: "Guilherme",      numero: "5562991087454", exibir: "(62) 99108-7454" },
+    { nome: "Miguel",         numero: "5562991526434", exibir: "(62) 99152-6434" }
+  ],
+  financeiro: { nome: "Financeiro", numero: "5562995513306", exibir: "(62) 99551-3306" },
 
   telefone: "(62) 3271-2133",
   email: "contato@goianiaplasticos.com.br",

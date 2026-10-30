@@ -70,7 +70,17 @@
   var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>';
 
   /* ---------- WhatsApp ---------- */
-  function waLink(text) { return "https://wa.me/" + S.whatsapp + "?text=" + encodeURIComponent(text); }
+  /* Todo botão de WhatsApp leva a "#wa=<mensagem>": o clique abre a janela de escolha do atendente. */
+  function waLink(text) { return "#wa=" + encodeURIComponent(text); }
+  function waTo(num, text) { return "https://wa.me/" + num + "?text=" + encodeURIComponent(text); }
+  function greet(text, nome) { return text.replace(/^Olá!/, "Olá, " + nome.split(" ")[0] + "!"); }
+  function chooseWa(text) {
+    var fin = S.financeiro;
+    overlay('<h2 class="lh" id="whoT">Com quem quer falar?</h2><p class="note" style="margin-top:6px">Toque no atendente. O WhatsApp abre com a mensagem pronta.</p><div class="who">' +
+      S.atendentes.map(function (p) { return '<a class="who-a" href="' + waTo(p.numero, greet(text, p.nome)) + '" target="_blank" rel="noopener" data-close="1"><span class="av" aria-hidden="true">' + esc(p.nome.charAt(0)) + '</span><span><b>' + esc(p.nome) + '</b><small>' + esc(p.exibir) + '</small></span>' + WA_ICON + "</a>"; }).join("") + "</div>" +
+      (fin ? '<p class="who-h">Boletos e pagamentos</p><div class="who"><a class="who-a fin" href="' + waTo(fin.numero, "Olá! Vim pelo site da Goiânia Plásticos e preciso falar com o financeiro.") + '" target="_blank" rel="noopener" data-close="1"><span class="av" aria-hidden="true">$</span><span><b>Financeiro</b><small>' + esc(fin.exibir) + "</small></span>" + WA_ICON + "</a></div>" : ""), "sheetWho");
+    $("#sheetWho").setAttribute("aria-labelledby", "whoT");
+  }
   var HEAD = "Olá! Vi o site da Goiânia Plásticos e quero saber o preço e a disponibilidade de:";
   function listMsg() {
     return HEAD + "\n" + lista.slice(0, 40).map(function (c) { var i = BYC[c]; return "• " + i.n + " (cód. " + i.c + ")"; }).join("\n");
@@ -135,7 +145,7 @@
       '<section class="contact" id="contato"><div class="wrap"><div class="sec" style="padding:0"><h2>Venha nos visitar</h2></div><div class="grid2">' +
       '<dl class="info"><div><dt>Endereço</dt><dd>' + addr + "</dd></div>" +
       '<div><dt>Telefone</dt><dd><a href="tel:+55' + S.telefone.replace(/\D/g, "") + '">' + esc(S.telefone) + "</a></dd></div>" +
-      '<div><dt>WhatsApp</dt><dd><a href="' + waLink("Olá! Vim pelo site da Goiânia Plásticos.") + '" target="_blank" rel="noopener">' + esc(S.whatsappExibir) + "</a></dd></div>" +
+      '<div><dt>WhatsApp</dt><dd>' + S.atendentes.map(function (p) { return esc(p.nome) + ': <a href="' + waTo(p.numero, greet("Olá! Vim pelo site da Goiânia Plásticos.", p.nome)) + '" target="_blank" rel="noopener">' + esc(p.exibir) + "</a>"; }).join("<br>") + (S.financeiro ? '<br>Financeiro: <a href="' + waTo(S.financeiro.numero, "Olá! Vim pelo site da Goiânia Plásticos e preciso falar com o financeiro.") + '" target="_blank" rel="noopener">' + esc(S.financeiro.exibir) + "</a>" : "") + "</dd></div>" +
       '<div><dt>E-mail</dt><dd><a href="mailto:' + esc(S.email) + '">' + esc(S.email) + "</a></dd></div>" +
       (S.horario ? "<div><dt>Horário</dt><dd>" + esc(S.horario) + pend("horario") + "</dd></div>" : "") + "</dl>" +
       '<div class="mapcol">' + (S.mapaEmbed ? '<iframe class="map" title="Mapa da loja Goiânia Plásticos" src="' + esc(S.mapaEmbed) + '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>' : "") + '<div class="where">' + PIN + "<p>" + esc(e.linha1) + "<span>" + esc(e.bairro) + ", " + esc(e.cidade) + " – " + esc(e.uf) + "</span></p>" +
@@ -223,6 +233,8 @@
   /* ---------- cliques ---------- */
   document.addEventListener("click", function (ev) {
     var t = ev.target;
+    var wa = t.closest('a[href^="#wa="]'); if (wa) { ev.preventDefault(); chooseWa(decodeURIComponent(wa.getAttribute("href").slice(4))); return; }
+    if (t.closest("a[data-close]")) { setTimeout(function () { closeOverlay(true); }, 50); return; }
     var add = t.closest(".add[data-c]"); if (add) { toggle(+add.getAttribute("data-c")); return; }
     var op = t.closest("[data-open]"); if (op) { openItem(BYC[+op.getAttribute("data-open")]); return; }
     var chip = t.closest("[data-chip]");
