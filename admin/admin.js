@@ -4,6 +4,7 @@
   var $ = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var nz = function (s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\b(corvim|curvim)\b/g, "courvim").replace(/\s+/g, " ").trim(); };
+  if (!window.supabase || !window.supabase.createClient) { var bt = $("#boot"); bt.textContent = "Não foi possível carregar o painel. Atualize a página; se continuar, avise quem mantém o site."; bt.hidden = false; return; }
   var sb = window.supabase.createClient(S.supabaseUrl, S.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } });
 
   var FAMS = C.familias, FAMN = {}; FAMS.forEach(function (f) { FAMN[f.id] = f.nome; });
@@ -43,7 +44,7 @@
   $("#out").addEventListener("click", function () { sb.auth.signOut().then(function () { location.reload(); }); });
 
   function start() {
-    sb.auth.getSession().then(function (r) {
+    sb.auth.getSession().catch(function () { return { data: { session: null } }; }).then(function (r) {
       if (!r.data.session) { show("#login", true); show("#app", false); show("#out", false); return; }
       show("#login", false); show("#app", true); show("#out", true);
       $("#nf").innerHTML = '<option value="">Escolha…</option>' + FAMS.map(function (f) { return '<option value="' + f.id + '">' + esc(f.nome) + "</option>"; }).join("");

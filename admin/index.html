@@ -29,6 +29,7 @@ html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;padding-bottom:84px}
 </style>
 <style>
+*,*::before,*::after{box-sizing:border-box}
 body{padding-bottom:40px}
 h1,h2{font-family:var(--f-display);font-stretch:112%;color:var(--titulo);margin:0}
 .ad{max-width:760px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px))}
@@ -64,7 +65,9 @@ input:focus,select:focus{outline:none;border-color:var(--verde)}
 <body>
 <header class="ad-top"><div class="ad"><b>Painel · Goiânia Plásticos</b><div><button class="btn btn-line btn-sm" id="out" hidden>Sair</button></div></div></header>
 <main class="ad">
-  <section id="login" class="card1" hidden>
+  <noscript><p class="msg err">Ative o JavaScript para usar o painel.</p></noscript>
+  <p class="msg err" id="boot" hidden></p>
+  <section id="login" class="card1">
     <h1 style="font-size:1.5rem">Entrar</h1>
     <p class="hint">Acesso restrito ao administrador do site.</p>
     <form id="fl"><label for="em">E-mail</label><input id="em" type="email" autocomplete="username" required>
@@ -100,7 +103,7 @@ input:focus,select:focus{outline:none;border-color:var(--verde)}
   </section>
 </main>
 <input id="pf" type="file" accept="image/*" capture="environment" hidden>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.js"></script>
 <script src="../js/config.js"></script>
 <script src="../js/catalogo.js"></script>
 <script src="admin.js"></script>
