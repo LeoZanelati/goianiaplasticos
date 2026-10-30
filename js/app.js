@@ -133,8 +133,8 @@
       '<div><dt>E-mail</dt><dd><a href="mailto:' + esc(S.email) + '">' + esc(S.email) + "</a></dd></div>" +
       (S.horario ? "<div><dt>Horário</dt><dd>" + esc(S.horario) + pend("horario") + "</dd></div>" : "") + "</dl>" +
       '<div class="where">' + PIN + "<p>" + esc(e.linha1) + "<span>" + esc(e.bairro) + ", " + esc(e.cidade) + " – " + esc(e.uf) + "</span></p>" +
-      '<div class="acts"><a class="btn btn-wa" href="https://www.google.com/maps/dir/?api=1&destination=' + maps + '" target="_blank" rel="noopener">Como chegar</a>' +
-      '<a class="btn btn-line" href="https://www.google.com/maps/search/?api=1&query=' + maps + '" target="_blank" rel="noopener">Abrir no mapa</a></div></div></div></div></section>';
+      '<div class="acts"><a class="btn btn-wa" href="' + esc(S.mapaLink || "https://www.google.com/maps/dir/?api=1&destination=" + maps) + '" target="_blank" rel="noopener">Como chegar</a>' +
+      '<a class="btn btn-line" href="' + esc(S.mapaLink || "https://www.google.com/maps/search/?api=1&query=" + maps) + '" target="_blank" rel="noopener">Abrir no mapa</a></div></div></div></div></section>';
   }
 
   var PAGE = 36;

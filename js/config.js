@@ -21,6 +21,8 @@ window.SITE = {
     cidade: "Goiânia", uf: "GO", cep: "74430-030"
   },
 
+  mapaLink: "https://maps.app.goo.gl/xE5QYmmc9DdV8J2EA",   // link do Google Maps da loja
+
   horario: "Segunda a sexta, 8h às 18h · Sábado, 8h às 12h",   // ex.: "Segunda a sexta, 8h às 18h · Sábado, 8h às 12h". Vazio = não aparece no site.
 
   // true = mostra a etiqueta "a confirmar" ao lado dos dados ainda não validados.
