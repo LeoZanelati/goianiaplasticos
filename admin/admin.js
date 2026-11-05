@@ -27,7 +27,7 @@
 
   function show(id, on) { $(id).hidden = !on; }
   function say(el, msg, err) { el.textContent = msg; el.className = "msg" + (err ? " err" : ""); el.hidden = false; }
-  var gmT; function gsay(msg, err) { clearTimeout(gmT); say($("#gm"), msg, err); gmT = setTimeout(function () { $("#gm").hidden = true; }, 4000); }
+  var gmT; function gsay(msg, err) { clearTimeout(gmT); say($("#gm"), msg, err); $("#gm").classList.add("fixo"); if (!err && !/…$/.test(msg)) gmT = setTimeout(function () { $("#gm").hidden = true; }, 5000); }
   function trad(e) {
     var m = (e && e.message) || String(e);
     if (/row-level security|permission|not authorized|403/i.test(m)) return "Sem permissão. Entre com a conta de administrador.";
@@ -37,6 +37,8 @@
     if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com a internet.";
     return m;
   }
+
+  $("#gm").addEventListener("click", function () { this.hidden = true; });
 
   /* ---------- login ---------- */
   $("#fl").addEventListener("submit", function (ev) {
@@ -158,15 +160,18 @@
         var w = Math.min(640, im.naturalWidth), h = Math.round(im.naturalHeight * w / im.naturalWidth);
         var cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        cv.toBlob(function (b) { if (b) res(b); else rej(new Error("Não foi possível processar a foto.")); }, "image/webp", 0.78);
+        cv.toBlob(function (b) {
+          if (b && b.type === "image/webp") return res(b);
+          cv.toBlob(function (j) { if (j) res(j); else rej(new Error("Não foi possível processar a foto.")); }, "image/jpeg", 0.82); // iPhone/Safari não gera WebP
+        }, "image/webp", 0.78);
       };
-      im.onerror = function () { rej(new Error("Foto inválida.")); }; im.src = url;
+      im.onerror = function () { rej(new Error("Não foi possível abrir a foto. Tente tirar outra.")); }; im.src = url;
     });
   }
   function upload(code, file) {
     return shrink(file).then(function (blob) {
-      var path = code + "-" + Date.now() + ".webp";
-      return sb.storage.from("fotos").upload(path, blob, { contentType: "image/webp", upsert: true }).then(function (r) {
+      var path = code + "-" + Date.now() + (blob.type === "image/webp" ? ".webp" : ".jpg");
+      return sb.storage.from("fotos").upload(path, blob, { contentType: blob.type, upsert: false }).then(function (r) {
         if (r.error) throw r.error;
         return sb.storage.from("fotos").getPublicUrl(path).data.publicUrl;
       });
